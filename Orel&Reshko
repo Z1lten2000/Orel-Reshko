@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор подбрасывания монеты</title>
+    <style>
+        :root {
+            --primary-color: #4a6bff;
+            --secondary-color: #f5f5f5;
+            --text-color: #333;
+            --bg-color: #fff;
+            --coin-color: gold;
+            --shadow-color: rgba(0, 0, 0, 0.2);
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #6b8cff;
+            --secondary-color: #2d2d2d;
+            --text-color: #f5f5f5;
+            --bg-color: #1e1e1e;
+            --coin-color: #d4af37;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .settings-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        .coin-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .coin {
+            width: 200px;
+            height: 200px;
+            background-color: var(--coin-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 0 20px var(--shadow-color);
+            transform-style: preserve-3d;
+            transition: transform 1s ease-out;
+        }
+
+        .coin-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .heads {
+            background-color: var(--coin-color);
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle">🦅</text></svg>');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 60%;
+            transform: rotateY(0deg);
+        }
+
+        .tails {
+            background-color: var(--coin-color);
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle">1₽</text></svg>');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 60%;
+            transform: rotateY(180deg);
+        }
+
+        .flipping {
+            animation: flip-coin 2s cubic-bezier(0.4, 2.5, 0.6, 0.5) forwards;
+        }
+
+        @keyframes flip-coin {
+            0% {
+                transform: rotateY(0) scale(1);
+            }
+            50% {
+                transform: rotateY(1800deg) scale(1.1);
+            }
+            100% {
+                transform: rotateY(calc(1800deg + 180deg)) scale(1);
+            }
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #3a5bef;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .result {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+            min-height: 40px;
+        }
+
+        .stats-container {
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .stats-tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .stats-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+
+        .stats-tab.active {
+            border-bottom: 3px solid var(--primary-color);
+            font-weight: bold;
+        }
+
+        .stats-content {
+            display: none;
+        }
+
+        .stats-content.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: var(--secondary-color);
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            height: 20px;
+            border-radius: 8px;
+            background-color: var(--primary-color);
+            width: 50%;
+            transition: width 0.5s;
+        }
+
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 350px;
+            height: 100vh;
+            background-color: var(--bg-color);
+            box-shadow: -5px 0 15px var(--shadow-color);
+            padding: 20px;
+            transition: right 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .settings-panel.open {
+            right: 0;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-settings {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        .settings-group {
+            margin-bottom: 20px;
+        }
+
+        .settings-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .settings-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        select, input[type="range"] {
+            width: 60%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+        }
+
+        .share-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .share-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .twitter {
+            background-color: #1DA1F2;
+            color: white;
+        }
+
+        .facebook {
+            background-color: #4267B2;
+            color: white;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            .coin {
+                width: 150px;
+                height: 150px;
+            }
+            
+            .settings-panel {
+                width: 280px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+    
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-header">
+            <h2>Настройки</h2>
+            <button class="close-settings" id="closeSettings">×</button>
+        </div>
+        
+        <div class="settings-group">
+            <div class="settings-title">Внешний вид</div>
+            <div class="settings-option">
+                <label for="themeSelect">Тема:</label>
+                <select id="themeSelect">
+                    <option value="auto">Системная</option>
+                    <option value="light">Светлая</option>
+                    <option value="dark">Тёмная</option>
+                </select>
+            </div>
+            <div class="settings-option">
+                <label for="coinDesign">Дизайн монеты:</label>
+                <select id="coinDesign">
+                    <option value="ruble">Рубль (1₽)</option>
+                    <option value="dollar">Доллар ($)</option>
+                    <option value="euro">Евро (€)</option>
+                    <option value="crown">Корона (👑)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="settings-group">
+            <div class="settings-title">Звуки</div>
+            <div class="settings-option">
+                <label for="soundToggle">Звуковые эффекты:</label>
+                <input type="checkbox" id="soundToggle" checked>
+            </div>
+            <div class="settings-option">
+                <label for="volumeControl">Громкость:</label>
+                <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="0.7">
+            </div>
+        </div>
+        
+        <div class="settings-group">
+            <div class="settings-title">Вероятность</div>
+            <div class="settings-option">
+                <label for="probabilityControl">Шанс орла:</label>
+                <input type="range" id="probabilityControl" min="1" max="99" value="50">
+            </div>
+            <div id="probabilityValue">50%</div>
+        </div>
+        
+        <div class="share-buttons">
+            <button class="share-btn twitter" id="shareTwitter">
+                <span>Twitter</span>
+            </button>
+            <button class="share-btn facebook" id="shareFacebook">
+                <span>Facebook</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Орёл или Решка</h1>
+            <button class="settings-btn" id="settingsBtn">⚙️</button>
+        </header>
+        
+        <div class="coin-container">
+            <div class="coin" id="coin">
+                <div class="coin-face heads"></div>
+                <div class="coin-face tails"></div>
+            </div>
+            <div class="result" id="result"></div>
+        </div>
+        
+        <div class="controls">
+            <button id="flipBtn">Подбросить монету</button>
+            <button id="autoFlipBtn">Автоподбрасывание (10 раз)</button>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stats-tabs">
+                <div class="stats-tab active" data-tab="history">История</div>
+                <div class="stats-tab" data-tab="stats">Статистика</div>
+            </div>
+            
+            <div class="stats-content active" id="historyContent">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Результат</th>
+                            <th>Время</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTable">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="stats-content" id="statsContent">
+                <div class="stats-option">
+                    <div>Всего бросков: <span id="totalFlips">0</span></div>
+                </div>
+                <div class="stats-option">
+                    <div>Орлов: <span id="headsCount">0</span> (<span id="headsPercent">0</span>%)</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="headsProgress"></div>
+                    </div>
+                </div>
+                <div class="stats-option">
+                    <div>Решек: <span id="tailsCount">0</span> (<span id="tailsPercent">0</span>%)</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="tailsProgress"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="flipSound" src="https://assets.mixkit.co/sfx/preview/mixkit-coin-flip-1939.mp3" preload="auto"></audio>
+    <audio id="landSound" src="https://assets.mixkit.co/sfx/preview/mixkit-coins-handling-1939.mp3" preload="auto"></audio>
+
+    <script>
+        // Элементы DOM
+        const coin = document.getElementById('coin');
+        const flipBtn = document.getElementById('flipBtn');
+        const autoFlipBtn = document.getElementById('autoFlipBtn');
+        const resultDisplay = document.getElementById('result');
+        const historyTable = document.getElementById('historyTable');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const closeSettings = document.getElementById('closeSettings');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const overlay = document.getElementById('overlay');
+        const themeSelect = document.getElementById('themeSelect');
+        const coinDesign = document.getElementById('coinDesign');
+        const soundToggle = document.getElementById('soundToggle');
+        const volumeControl = document.getElementById('volumeControl');
+        const probabilityControl = document.getElementById('probabilityControl');
+        const probabilityValue = document.getElementById('probabilityValue');
+        const totalFlips = document.getElementById('totalFlips');
+        const headsCount = document.getElementById('headsCount');
+        const tailsCount = document.getElementById('tailsCount');
+        const headsPercent = document.getElementById('headsPercent');
+        const tailsPercent = document.getElementById('tailsPercent');
+        const headsProgress = document.getElementById('headsProgress');
+        const tailsProgress = document.getElementById('tailsProgress');
+        const flipSound = document.getElementById('flipSound');
+        const landSound = document.getElementById('landSound');
+        const historyContent = document.getElementById('historyContent');
+        const statsContent = document.getElementById('statsContent');
+        const tabs = document.querySelectorAll('.stats-tab');
+        const shareTwitter = document.getElementById('shareTwitter');
+        const shareFacebook = document.getElementById('shareFacebook');
+
+        // Состояние приложения
+        let isFlipping = false;
+        let flipHistory = JSON.parse(localStorage.getItem('flipHistory')) || [];
+        let stats = JSON.parse(localStorage.getItem('stats')) || { heads: 0, tails: 0 };
+        let settings = JSON.parse(localStorage.getItem('settings')) || {
+            theme: 'auto',
+            coinDesign: 'ruble',
+            soundEnabled: true,
+            volume: 0.7,
+            probability: 50
+        };
+
+        // Инициализация
+        function init() {
+            // Применяем сохранённые настройки
+            applySettings();
+            
+            // Обновляем статистику
+            updateStats();
+            
+            // Обновляем историю
+            updateHistory();
+            
+            // Настройка темы
+            setupTheme();
+            
+            // Настройка звуков
+            setupSounds();
+            
+            // Настройка вероятности
+            setupProbability();
+            
+            // Настройка дизайна монеты
+            setupCoinDesign();
+        }
+
+        // Применение настроек
+        function applySettings() {
+            themeSelect.value = settings.theme;
+            coinDesign.value = settings.coinDesign;
+            soundToggle.checked = settings.soundEnabled;
+            volumeControl.value = settings.volume;
+            probabilityControl.value = settings.probability;
+            probabilityValue.textContent = `${settings.probability}%`;
+            
+            // Устанавливаем громкость звуков
+            flipSound.volume = settings.volume;
+            landSound.volume = settings.volume;
+            
+            // Применяем тему
+            applyTheme(settings.theme);
+        }
+
+        // Настройка темы
+        function setupTheme() {
+            // Проверяем системные настройки
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (settings.theme === 'auto') {
+                applyTheme(prefersDark ? 'dark' : 'light');
+            } else {
+                applyTheme(settings.theme);
+            }
+            
+            // Слушаем изменения системной темы
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+                if (settings.theme === 'auto') {
+                    applyTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+            
+            // Обработчик изменения темы в настройках
+            themeSelect.addEventListener('change', () => {
+                settings.theme = themeSelect.value;
+                saveSettings();
+                
+                if (settings.theme === 'auto') {
+                    applyTheme(prefersDark ? 'dark' : 'light');
+                } else {
+                    applyTheme(settings.theme);
+                }
+            });
+        }
+
+        // Применение темы
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+        }
+
+        // Настройка звуков
+        function setupSounds() {
+            soundToggle.addEventListener('change', () => {
+                settings.soundEnabled = soundToggle.checked;
+                saveSettings();
+            });
+            
+            volumeControl.addEventListener('input', () => {
+                settings.volume = parseFloat(volumeControl.value);
+                flipSound.volume = settings.volume;
+                landSound.volume = settings.volume;
+                saveSettings();
+            });
+        }
+
+        // Настройка вероятности
+        function setupProbability() {
+            probabilityControl.addEventListener('input', () => {
+                settings.probability = parseInt(probabilityControl.value);
+                probabilityValue.textContent = `${settings.probability}%`;
+                saveSettings();
+            });
+        }
+
+        // Настройка дизайна монеты
+        function setupCoinDesign() {
+            coinDesign.addEventListener('change', () => {
+                settings.coinDesign = coinDesign.value;
+                saveSettings();
+                updateCoinDesign();
+            });
+            
+            updateCoinDesign();
+        }
+
+        // Обновление дизайна монеты
+        function updateCoinDesign() {
+            const heads = document.querySelector('.heads');
+            const tails = document.querySelector('.tails');
+            
+            switch(settings.coinDesign) {
+                case 'ruble':
+                    heads.style.backgroundImage = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle">🦅</text></svg>\')';
+                    tails.style.backgroundImage = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle">1₽</text></svg>\')';
+                    break;
+                case 'dollar':
+                    heads.style.backgroundImage = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle">🦅</text></svg>\')';
+                    tails.style.backgroundImage = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle">$1</text></svg>\')';
+                    break;
+                case 'euro':
+                    heads.style.backgroundImage = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle">🏛️</text></svg>\')';
+                    tails.style.backgroundImage = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle">€1</text></svg>\')';
+                    break;
+                case 'crown':
+                    heads.style.backgroundImage = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle">👑</text></svg>\')';
+                    tails.style.backgroundImage = 'url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50%" y="50%" font-size="40" text-anchor="middle" dominant-baseline="middle">⚜️</text></svg>\')';
+                    break;
+            }
+        }
+
+        // Сохранение настроек
+        function saveSettings() {
+            localStorage.setItem('settings', JSON.stringify(settings));
+        }
+
+        // Подбрасывание монеты
+        function flipCoin() {
+            if (isFlipping) return;
+            
+            isFlipping = true;
+            flipBtn.disabled = true;
+            autoFlipBtn.disabled = true;
+            resultDisplay.textContent = '';
+            
+            // Воспроизводим звук броска
+            if (settings.soundEnabled) {
+                flipSound.currentTime = 0;
+                flipSound.play();
+            }
+            
+            // Запускаем анимацию
+            coin.classList.add('flipping');
+            
+            // Определяем результат через заданное время
+            setTimeout(() => {
+                const result = determineResult();
+                const timestamp = new Date().toLocaleTimeString();
+                
+                // Сохраняем результат
+                flipHistory.unshift({ result, timestamp });
+                if (flipHistory.length > 10) flipHistory.pop();
+                
+                if (result === 'ОРЁЛ') {
+                    stats.heads++;
+                } else {
+                    stats.tails++;
+                }
+                
+                // Обновляем интерфейс
+                resultDisplay.textContent = result;
+                updateStats();
+                updateHistory();
+                
+                // Сохраняем данные
+                localStorage.setItem('flipHistory', JSON.stringify(flipHistory));
+                localStorage.setItem('stats', JSON.stringify(stats));
+                
+                // Воспроизводим звук приземления
+                if (settings.soundEnabled) {
+                    landSound.currentTime = 0;
+                    landSound.play();
+                }
+                
+                // Завершаем анимацию
+                setTimeout(() => {
+                    coin.classList.remove('flipping');
+                    isFlipping = false;
+                    flipBtn.disabled = false;
+                    autoFlipBtn.disabled = false;
+                }, 500);
+            }, 2000);
+        }
+
+        // Автоподбрасывание
+        function autoFlip() {
+            if (isFlipping) return;
+            
+            let count = 0;
+            const maxFlips = 10;
+            autoFlipBtn.disabled = true;
+            flipBtn.disabled = true;
+            
+            function doFlip() {
+                if (count >= maxFlips) {
+                    autoFlipBtn.disabled = false;
+                    flipBtn.disabled = false;
+                    return;
+                }
+                
+                flipCoin();
+                count++;
+                
+                // Делаем следующий бросок через 2.5 секунды
+                setTimeout(doFlip, 2500);
+            }
+            
+            doFlip();
+        }
+
+        // Определение результата
+        function determineResult() {
+            const randomValue = Math.random() * 100;
+            return randomValue < settings.probability ? 'ОРЁЛ' : 'РЕШКА';
+        }
+
+        // Обновление статистики
+        function updateStats() {
+            const total = stats.heads + stats.tails;
+            totalFlips.textContent = total;
+            
+            if (total > 0) {
+                const headsPct = Math.round((stats.heads / total) * 100);
+                const tailsPct = 100 - headsPct;
+                
+                headsCount.textContent = stats.heads;
+                tailsCount.textContent = stats.tails;
+                headsPercent.textContent = headsPct;
+                tailsPercent.textContent = tailsPct;
+                headsProgress.style.width = `${headsPct}%`;
+                tailsProgress.style.width = `${tailsPct}%`;
+            } else {
+                headsCount.textContent = '0';
+                tailsCount.textContent = '0';
+                headsPercent.textContent = '0';
+                tailsPercent.textContent = '0';
+                headsProgress.style.width = '0%';
+                tailsProgress.style.width = '0%';
+            }
+        }
+
+        // Обновление истории
+        function updateHistory() {
+            historyTable.innerHTML = '';
+            
+            if (flipHistory.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="3" style="text-align: center;">История бросков пуста</td>';
+                historyTable.appendChild(row);
+                return;
+            }
+            
+            flipHistory.forEach((flip, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${flip.result}</td>
+                    <td>${flip.timestamp}</td>
+                `;
+                historyTable.appendChild(row);
+            });
+        }
+
+        // Переключение вкладок
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const tabName = tab.getAttribute('data-tab');
+                document.querySelectorAll('.stats-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                document.getElementById(`${tabName}Content`).classList.add('active');
+            });
+        });
+
+        // Открытие/закрытие настроек
+        settingsBtn.addEventListener('click', () => {
+            settingsPanel.classList.add('open');
+            overlay.classList.add('active');
+        });
+
+        closeSettings.addEventListener('click', () => {
+            settingsPanel.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            settingsPanel.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+
+        // Кнопки поделиться
+        shareTwitter.addEventListener('click', () => {
+            const text = `Я подбросил монету и выпало: ${resultDisplay.textContent || 'попробуйте сами'}!`;
+            const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`;
+            window.open(url, '_blank');
+        });
+
+        shareFacebook.addEventListener('click', () => {
+            const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
+            window.open(url, '_blank');
+        });
+
+        // Обработчики кнопок
+        flipBtn.addEventListener('click', flipCoin);
+        autoFlipBtn.addEventListener('click', autoFlip);
+        coin.addEventListener('click', flipCoin);
+
+        // Инициализация приложения
+        init();
+    </script>
+</body>
+</html>
